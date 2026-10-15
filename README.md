@@ -1,337 +1,525 @@
-# Flask-SQLAlchemy Lab 1
+# Flask-SQLAlchemy Foundations - Earthquake Data
 
 ## Overview
 
-At your new role as a junior backend developer at Seismic Analytics Co., your 
-team is building a new internal tool to manage global earthquake data. Until 
-now, the data was tracked manually in spreadsheets — causing duplicate records, 
-missing information, and delays when scientists needed to access accurate seismic 
-history. The organization needs a web-based backend that:
+A RESTful API built with Flask, Flask-SQLAlchemy, and SQLite to manage and retrieve historical earthquake data.
 
-* Stores earthquake data securely.
-* Allows fast queries based on event ID or magnitude.
-* Returns results in a structured JSON format so that frontend tools (maps, graphs) can dynamically visualize the data.
+This project was developed as part of the Flask-SQLAlchemy Lab 1 assignment. It demonstrates database modeling, schema migrations, data seeding, SQLAlchemy queries, and JSON API responses.
 
-This lab simulates a realistic project where you'll:
+The application allows users to retrieve individual earthquake records by ID or filter multiple earthquakes based on a minimum magnitude threshold.
 
-* Define a database model for earthquakes.
-* Set up database migrations to create and maintain the database.
-* Seed the database with real sample data.
-* Write API routes to query and return earthquake information as JSON.
+## Features
 
-You’ll apply the same problem-solving process used in professional development:
+- **Earthquake Database Model:** Stores earthquake IDs, magnitudes, locations, and years using SQLAlchemy ORM.
+- **Database Migrations:** Uses Flask-Migrate and Alembic to manage database schema changes.
+- **Database Seeding:** Populates the database with five historical earthquake records.
+- **Earthquake Lookup:** Retrieves individual earthquakes by their unique ID.
+- **Magnitude Filtering:** Retrieves earthquakes greater than or equal to a specified magnitude.
+- **Flexible URL Parameters:** Supports both integer and floating-point magnitude values.
+- **JSON Responses:** Returns structured earthquake data for frontend integration.
+- **HTTP Status Codes:** Handles successful requests (200) and missing earthquake records (404).
+- **Automated Testing:** Uses Pytest to validate models and API functionality.
 
-* Define the problem and requirements.
-* Determine the technical design.
-* Develop, test, and refine your solution incrementally.
+## Technologies Used
 
-## Setup
+- Python
+- Flask
+- Flask-SQLAlchemy
+- SQLAlchemy ORM
+- SQLite
+- Flask-Migrate
+- Alembic
+- Pytest
+- Pipenv
 
-Fork and clone the lab repo.
+## Project Structure
 
-Run `pipenv install` and `pipenv shell` .
-
-```console
-$ pipenv install
-$ pipenv shell
+```text
+flask-sqlalchemy-foundations-lab/
+├── server/
+│   ├── app.py
+│   ├── models.py
+│   ├── seed.py
+│   ├── instance/
+│   │   └── app.db
+│   ├── migrations/
+│   │   ├── versions/
+│   │   │   └── 5afc3345ca1c_initial_migration.py
+│   │   ├── alembic.ini
+│   │   ├── env.py
+│   │   ├── README
+│   │   └── script.py.mako
+│   └── testing/
+│       ├── models_test.py
+│       ├── app_earthquake_test.py
+│       └── app_magnitude_test.py
+├── Pipfile
+├── Pipfile.lock
+├── .gitignore
+└── README.md
 ```
 
-Change into the `server` directory and configure the `FLASK_APP` and
-`FLASK_RUN_PORT` environment variables:
+**Note:** The SQLite database is generated locally and excluded from version control through `.gitignore`. Migration scripts remain tracked so the database schema can be recreated.
 
-```console
-$ cd server
-$ export FLASK_APP=app.py
-$ export FLASK_RUN_PORT=5555
+## Installation and Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone <https://github.com/Matt20Swanberg/flask-sqlalchemy-foundations-lab>
+cd flask-sqlalchemy-foundations-lab
 ```
 
-## Instructions
+### 2. Install Dependencies
 
-### Task 1: Define the Problem
+Install the project's dependencies using Pipenv:
 
-Seismic Analytics Co. needs a reliable backend service that stores earthquake 
-event data and provides a way to retrieve:
+```bash
+pipenv install
+```
 
-* A specific earthquake by its ID.
-* A list of earthquakes that meet a minimum magnitude threshold.
+Activate the virtual environment:
 
-Manual spreadsheet tracking is unreliable and unscalable. The backend must 
-expose simple, efficient API endpoints that:
+```bash
+pipenv shell
+```
 
-* Query the database for earthquakes based on user input.
-* Return results in JSON format for easy frontend integration.
+### 3. Configure Flask
 
-You must ensure that:
+Navigate into the server directory:
 
-* The database is properly structured and version-controlled using migrations.
-* The application can be seeded with initial earthquake data.
-* Queries can efficiently filter large datasets.
-* The API returns clear 200 or 404 responses depending on the search results.
+```bash
+cd server
+```
 
-### Task 2: Determine the Design
+Set the Flask application and development port:
 
-The technical design for this application will include:
+```bash
+export FLASK_APP=app.py
+export FLASK_RUN_PORT=5555
+```
 
-* Database Model:
-  * Define an Earthquake model with appropriate fields (id, magnitude, location, year) using SQLAlchemy ORM.
-* Database Migration:
-  * Use Flask-Migrate to initialize the database and create the earthquakes table via migration scripts.
-* Seeding:
-  * A seed.py script is included to insert a realistic set of earthquake records for development and testing purposes.
-* API Routes:
-  * GET /earthquakes/int:id — Retrieve a single earthquake by ID. Return a 404 JSON error if not found.
-  * GET /earthquakes/magnitude/float:magnitude — Retrieve all earthquakes above a given magnitude, returning a count and list in JSON format.
-* Testing:
-  * Use Pytest to validate that models, migrations, and routes behave correctly.
-  * Ensure database queries are efficient and handle missing records gracefully.
+### 4. Initialize the Database
 
+The project includes Alembic migration files.
 
-### Task 3: Develop, Test, and Refine the Code
+Apply the existing migrations to create the database schema:
 
-#### Step 1: Define a model
+```bash
+flask db upgrade head
+```
 
-Edit `server/models.py` to add a new model class named `Earthquake` that
-inherits from `db.Model`.
+This creates the SQLite database and the `earthquakes` table.
 
-Add the following attributes to the `Earthquake` model:
+**Note:** The migration environment is already included in the repository. Running `flask db init` again is not necessary.
 
-- a string named `__tablename__` assigned to the value `"earthquakes"`.
-- a column named `id` to store an int that is the primary key.
-- a column named `magnitude` to store a float.
-- a column named `location` to store a string.
-- A column named `year` to store an int.
+### 5. Seed the Database
 
-Add a `__repr__` method to return a string that formats the attributes id,
-magnitude, location, and year as a comma-separated sequence as shown:
+Populate the database with sample earthquake records:
+
+```bash
+python seed.py
+```
+
+The seed script inserts five historical earthquake records.
+
+| ID | Magnitude | Location  | Year |
+|----|-----------|-----------|------|
+| 1  | 9.5       | Chile     | 1960 |
+| 2  | 9.2       | Alaska    | 1964 |
+| 3  | 8.6       | Alaska    | 1946 |
+| 4  | 8.5       | Banda Sea | 1934 |
+| 5  | 8.4       | Chile     | 1922 |
+
+IDs shown above reflect the expected order when seeding a fresh database.
+
+**Important:** Running `seed.py` deletes existing earthquake records before inserting the sample data.
+
+### 6. Start the Flask Server
+
+Run:
+
+```bash
+flask run --port 5555 --debug
+```
+
+The API will be available at:
+
+```text
+http://127.0.0.1:5555
+```
+
+## Database Model
+
+The application uses SQLAlchemy ORM to represent earthquake records as Python objects.
+
+### Earthquake Model
+
+The `Earthquake` model maps to the `earthquakes` database table.
+
+| Attribute | Data Type | Description |
+|---|---|---|
+| id | Integer | Unique primary key |
+| magnitude | Float | Recorded earthquake magnitude |
+| location | String | Geographic location |
+| year | Integer | Year of occurrence |
+
+The model also implements a `__repr__()` method to provide a readable representation of each earthquake.
+
+Example:
 
 ```text
 <Earthquake 1, 9.5, Chile, 1960>
 ```
 
-Save `server/models.py`. Make sure you are in the `server` directory, then type
-the following to test the new `Earthquake` model class:
+## API Endpoints
 
-```console
-$ pytest testing/models_test.py
-```
+### 1. Home Endpoint
 
-The 4 tests should pass. If not, update your `Earthquake` model to pass the
-tests before proceeding.
+**Method:** `GET`
 
-#### Step 2: Initialize the database
-
-Now it is time to create a database named `app.db` with a table named
-`earthquakes`.
-
-Execute the following commands within the `server` directory:
-
-```console
-flask db init
-flask db migrate -m "initial migration"
-```
-
-The `instance` and `migrations` folder should appear with the database file and
-a migration script.
-
-Let's run the migration to create the `earthquakes` table:
-
-```console
-flask db upgrade head
-```
-
-Take a look at the file `seed.py`:
-
-```py
-#!/usr/bin/env python3
-# server/seed.py
-
-from app import app
-from models import db, Earthquake
-
-with app.app_context():
-
-    # Delete all rows in the "earthquakes" table
-    Earthquake.query.delete()
-
-    # Add several Earthquake instances to the "earthquakes" table
-    db.session.add(Earthquake(magnitude=9.5, location="Chile", year=1960))
-    db.session.add(Earthquake(magnitude=9.2, location="Alaska", year=1964))
-    db.session.add(Earthquake(magnitude=8.6, location="Alaska", year=1946))
-    db.session.add(Earthquake(magnitude=8.5, location="Banda Sea", year=1934))
-    db.session.add(Earthquake(magnitude=8.4, location="Chile", year=1922))
-
-    # Commit the transaction
-    db.session.commit()
-
-```
-
-Run the following command within the `server` directory to seed the table:
-
-```console
-python seed.py
-```
-
-Use the Flask shell to confirm the 5 earthquakes have been added and id's have
-been assigned. Your output may differ depending on your implementation of the
-`__repr__()` method:
-
-```command
-$ flask shell
->>> Earthquake.query.all()
-[<Earthquake 1, 9.5, Chile, 1960>, <Earthquake 2, 9.2, Alaska, 1964>, <Earthquake 3, 8.6, Alaska, 1946>, <Earthquake 4, 8.5, Banda Sea, 1934>, <Earthquake 5, 8.4, Chile, 1922>]
-```
-
-In the next step, you will implement views to query by id and filter by
-magnitude. But first you should practice some Flask-SQLAlchemy functions in the
-Flask shell.
-
-Recall the `filter_by()` function selects rows having a specific value for a
-column. For example, to select the row matching a specific id `5`:
-
-```console
->>> Earthquake.query.filter_by(id=5).first()
-<Earthquake 5, 8.4, Chile, 1922>
-```
-
-The `filter()` function selects rows matching a boolean expression. You can also
-use it to match a specific id:
-
-```console
->>> Earthquake.query.filter(Earthquake.id==5).first()
-<Earthquake 5, 8.4, Chile, 1922>
-```
-
-Note that the `filter_by()` function can only test for equality. Use the
-`filter()` function if you need to use a different relational operator. For
-example, to get all quakes with a magnitude of at least 8.6, you need to use
-`filter()` with a boolean expression using the `>=` operator:
-
-```console
->>> Earthquake.query.filter(Earthquake.magnitude >= 8.6).all()
-[<Earthquake 1, 9.5, Chile, 1960>, <Earthquake 2, 9.2, Alaska, 1964>, <Earthquake 3, 8.6, Alaska, 1946>]
-```
-
-Exit out of Flask shell and move on to the next task.
-
-```console
->>> exit()
-```
-
-#### Step 3: Add view to get an earthquake by id
-
-Edit `app.py` to add a view that takes one parameter, an integer that represents
-an id. The route should have the form `/earthquakes/<int:id>`.
-
-The view should query the database to get the earthquake with that id, and
-return a response containing the model attributes and values (id, location,
-magnitude, year) formatted as an JSON string. The response should include an
-error message if no row is found. Don't forget to import `Earthquake` from the
-`models` module.
-
-For example, the URL http://127.0.0.1:5555/earthquakes/2 should result in a
-response with a 200 status and a body containing JSON formatted text as shown:
+**Route:**
 
 ```text
+/
+```
+
+Returns a welcome message confirming the API is running.
+
+**Example Response:**
+
+```json
+{
+  "message": "Flask SQLAlchemy Lab 1"
+}
+```
+
+**HTTP Status:** `200 OK`
+
+---
+
+### 2. Retrieve Earthquake by ID
+
+**Method:** `GET`
+
+**Route:**
+
+```text
+/earthquakes/<int:id>
+```
+
+Retrieves a single earthquake using its unique database ID.
+
+**Example Request:**
+
+```text
+http://127.0.0.1:5555/earthquakes/2
+```
+
+**Example Response:**
+
+```json
 {
   "id": 2,
-  "location": "Alaska",
   "magnitude": 9.2,
+  "location": "Alaska",
   "year": 1964
 }
 ```
 
-However, the URL http://127.0.0.1:5555/earthquakes/9999 should result in a
-response with a 404 status and a body containing JSON formatted text as shown:
+**HTTP Status:** `200 OK`
+
+#### Earthquake Not Found
+
+If the requested earthquake does not exist, the API returns an error message.
+
+**Example Request:**
 
 ```text
+http://127.0.0.1:5555/earthquakes/9999
+```
+
+**Example Response:**
+
+```json
 {
   "message": "Earthquake 9999 not found."
 }
 ```
 
-Test the route by typing the following within the `server` directory (make sure
-the Flask server is running):
+**HTTP Status:** `404 Not Found`
 
-```console
-pytest testing/app_earthquake_test.py
-```
+---
 
-Make sure the 4 tests pass.
+### 3. Filter Earthquakes by Magnitude
 
-#### Step 4: Add view to get earthquakes matching a minimum magnitude value
+**Method:** `GET`
 
-Edit `app.py` to add a view that takes one parameter, a float that represents an
-magnitude. The route should have the form
-`/earthquakes/magnitude/<float:magnitude>`.
-
-The view should query the database to get all earthquakes having a magnitude
-greater than or equal to the parameter value, and return a JSON response
-containing the count of matching rows along with a list containing the data for
-each row.
-
-For example, the URL http://127.0.0.1:5555/earthquakes/magnitude/9.0 should
-result in a response with a 200 status and a body containing JSON formatted text
-as shown:
+**Routes:**
 
 ```text
+/earthquakes/magnitude/<float:magnitude>
+/earthquakes/magnitude/<int:magnitude>
+```
+
+Retrieves all earthquakes with magnitudes greater than or equal to the requested threshold.
+
+Both integer and floating-point values are supported.
+
+**Example Requests:**
+
+```text
+http://127.0.0.1:5555/earthquakes/magnitude/9
+```
+
+```text
+http://127.0.0.1:5555/earthquakes/magnitude/9.0
+```
+
+Both requests return the same matching earthquake records.
+
+**Example Response:**
+
+```json
 {
   "count": 2,
   "quakes": [
     {
       "id": 1,
-      "location": "Chile",
       "magnitude": 9.5,
+      "location": "Chile",
       "year": 1960
     },
     {
       "id": 2,
-      "location": "Alaska",
       "magnitude": 9.2,
+      "location": "Alaska",
       "year": 1964
     }
   ]
 }
 ```
 
-The URL http://127.0.0.1:5555/earthquakes/magnitude/10.0 should result in a
-response with a 200 status and a body containing JSON formatted text as shown:
+**HTTP Status:** `200 OK`
+
+#### No Matching Earthquakes
+
+If no earthquakes meet the requested magnitude, the API returns an empty list.
+
+**Example Request:**
 
 ```text
+http://127.0.0.1:5555/earthquakes/magnitude/10.0
+```
+
+**Example Response:**
+
+```json
 {
   "count": 0,
   "quakes": []
 }
 ```
 
-Test the route by typing the following within the `server` directory:
+**HTTP Status:** `200 OK`
 
-```console
-pytest testing/app_magnitude_test.py
+Unlike the earthquake-by-ID endpoint, an empty magnitude search is considered a successful request.
+
+## SQLAlchemy Queries
+
+The application uses SQLAlchemy ORM queries to retrieve earthquake data.
+
+### Retrieve an Earthquake by ID
+
+```python
+Earthquake.query.filter(Earthquake.id == id).first()
 ```
 
-Make sure the tests pass.
+This query retrieves the first earthquake matching the requested ID.
 
-#### Step 5: Commit and Push Git History
+If no matching record exists, `.first()` returns `None`.
 
-Commit and push your solution to GitHub with meaningful commit messages.
+### Filter Earthquakes by Magnitude
 
-Open a PR and merge final code to main if using a feature branch.
+```python
+Earthquake.query.filter(
+    Earthquake.magnitude >= magnitude
+).all()
+```
 
-Submit your GitHub Repo on Canvas to CodeGrade.
+This query retrieves all earthquake records whose magnitude meets or exceeds the requested threshold.
 
-### Task 4: Document and Maintain
+The resulting SQLAlchemy objects are converted into dictionaries before being returned as JSON.
 
-(Optional) Best Practice documentation steps:
-* Add comments to the code to explain purpose and logic, clarifying intent and functionality of your code to other developers.
-* Update README text to reflect the functionality of the application following https://makeareadme.com. 
-  * Add screenshot of completed work included in Markdown in README.
-* Delete any stale branches on GitHub
-* Remove unnecessary/commented out code
-* If needed, update git ignore to remove sensitive data
+## Database Migrations
 
-## Submit your solution
+Flask-Migrate and Alembic are used to manage database schema changes.
 
-CodeGrade will use the same test suite as the test suite included.
+### Initialize a New Migration Environment
 
-Once all tests are passing, commit and push your work using `git` to submit to CodeGrade through Canvas.
+For a new project without an existing migration directory:
 
+```bash
+flask db init
+```
+
+### Generate a Migration
+
+After modifying database models:
+
+```bash
+flask db migrate -m "description of changes"
+```
+
+### Apply Migrations
+
+```bash
+flask db upgrade head
+```
+
+### View the Current Revision
+
+```bash
+flask db current
+```
+
+Migration files are maintained in:
+
+```text
+server/migrations/versions/
+```
+
+This allows database schema changes to be tracked through version control.
+
+## Testing
+
+The application includes automated tests using Pytest.
+
+### Run All Tests
+
+From the `server` directory:
+
+```bash
+pytest -v
+```
+
+### Run Individual Test Suites
+
+**Earthquake Model Tests:**
+
+```bash
+pytest testing/models_test.py -v
+```
+
+**Earthquake-by-ID API Tests:**
+
+```bash
+pytest testing/app_earthquake_test.py -v
+```
+
+**Magnitude Filtering API Tests:**
+
+```bash
+pytest testing/app_magnitude_test.py -v
+```
+
+### Test Results
+
+All 10 tests passed successfully.
+
+```text
+================== 10 passed ==================
+```
+
+The tests validate:
+
+- SQLAlchemy model behavior
+- Earthquake lookup by ID
+- Successful JSON responses
+- HTTP 404 handling for missing earthquakes
+- Magnitude filtering
+- Matching earthquake counts
+- Empty query results
+
+## Time Complexity (Big O)
+
+The application uses SQLAlchemy ORM to execute database queries rather than manually iterating through every database record in Python.
+
+The following estimates describe the operations involved in retrieving and preparing earthquake data.
+
+| Operation | Approximate Complexity | Explanation |
+|---|---|---|
+| Lookup by primary key | O(log n) | Typical indexed database lookup; actual performance depends on the database engine and query plan |
+| Magnitude filtering | O(n) | A full table scan may be required without a magnitude index |
+| Convert matching records to dictionaries | O(k) | Processes each matching earthquake once |
+| Count matching records using `len()` | O(1) | Retrieves the length of the existing Python list |
+| Construct JSON response | O(k) | Response size grows with the number of matching records |
+
+Where:
+
+- `n` = Total number of earthquake records in the database.
+- `k` = Number of earthquakes matching the magnitude threshold.
+
+### Performance Considerations
+
+The earthquake ID is defined as the table's primary key, allowing efficient record retrieval.
+
+Magnitude filtering currently processes all matching records returned by the database.
+
+For larger datasets, performance could potentially be improved by:
+
+- Adding an index to the magnitude column.
+- Implementing pagination for large result sets.
+- Limiting the number of records returned per request.
+- Using database-level aggregation when only counts are needed.
+
+These optimizations are not required for the current assignment.
+
+
+### Screenshots
+
+The following screenshots demonstrate the functionality of the Earthquake API and successful test execution.
+
+#### 1A. Earthquake Lookup by ID
+
+Demonstrates retrieving an individual earthquake using its unique ID.
+
+```text
+http://127.0.0.1:5555/earthquakes/1
+```
+
+![Earthquake Lookup by ID](screenshots/id_route.png)
+
+### 1B. Earthquake Lookup by ID Not Found
+
+```text
+http://127.0.0.1:5555/earthquakes/100
+```
+
+![Earthquake Not Found](screenshots/id_not_found.png)
+
+#### 2. Earthquake Magnitude Filtering
+
+```text
+http://127.0.0.1:5555/earthquakes/magnitude/9.0
+```
+
+Demonstrates filtering earthquake records by a minimum magnitude.
+
+![Earthquake Magnitude Filtering](screenshots/magnitude_filter.png)
+
+#### 3. SQLite Database
+
+Displays the earthquake records stored in the SQLite database.
+
+![SQLite Database](screenshots/database.png)
+
+#### 4. Successful Test Suite
+
+Shows the results of running the automated Pytest suite, with all 10 tests passing.
+
+![Pytest Results](screenshots/test_suite.png)
+
+## Author
+
+Created by Matthew Swanberg as part of Course 9 Module 4 (Flask-SQLAlchemy Foundations - Earthquake Data)
